@@ -2,6 +2,8 @@
 
 #include "GameTwo.h"
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
+#include "Runtime/Engine/Classes/GameFramework/DamageType.h"
+#include "GameTwoGameMode.h"
 #include "GameTwoCharacter.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -12,27 +14,48 @@ AGameTwoCharacter::AGameTwoCharacter()
     // Set size for collision capsule
     GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
     
-    // Don't rotate when the controller rotates. Let that just affect the camera.
-    //	bUseControllerRotationPitch = false;
-    //	bUseControllerRotationYaw = false;
-    //	bUseControllerRotationRoll = false;
+    // I want the characters yaw to be the same as the controller:
+    bUseControllerRotationYaw = true;
     
     // Configure character movement
-    //    GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...
-    //    GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
-    //    GetCharacterMovement()->JumpZVelocity = 600.f;
-    //    GetCharacterMovement()->AirControl = 0.2f;
+    GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...
     
-    //    // Create a camera boom (pulls in towards the player if there is a collision)
+    
+    // Create a camera boom (pulls in towards the player if there is a collision)
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
     CameraBoom->SetupAttachment(RootComponent);
     CameraBoom->TargetArmLength = 500.0f; // The camera follows at this distance behind the character
-    CameraBoom-> bUseControllerViewRotation = false; // Rotate the arm based on the controller
+    //Set the default rotation of the arm
     CameraBoom->SetWorldRotation(FVector(0.f, -55.f, 0.f).Rotation());
-    //
-    //    // Create a follow camera
+    
+    // Create a camera and place it on the arm
     FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the
+}
+
+void AGameTwoCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+    if(GetWorld())
+    {
+        //This is just so I have the mouse cursor available in the editor:
+        //I don't use it in the game
+        GetWorld()->GetFirstPlayerController()->bShowMouseCursor = true;
+        
+        
+        //Get the current GameMode, casting it to our own GameMode
+        //Needed in the following trick.
+        auto CurrentGameMode = Cast<AGameTwoGameMode>(GetWorld()->GetAuthGameMode());
+        
+        //Force the player to spawn at the "First" PlayerStart.
+        if (Controller)
+        {
+            //Get the PlayerStart with the wanted tag:
+            AActor *NewPawn = CurrentGameMode->FindPlayerStart(Controller, "First");
+            SetActorLocation(NewPawn->GetActorLocation());
+            Controller->ClientSetRotation(NewPawn->GetActorRotation());
+        }
+    }
 }
 
 void AGameTwoCharacter::Tick(float DeltaTime)
@@ -44,6 +67,36 @@ void AGameTwoCharacter::Tick(float DeltaTime)
     }
 }
 
+void AGameTwoCharacter::FellOutOfWorld(const UDamageType & dmgType)
+{
+    //If we call the super version, the character gets destroyed
+    //I don't want that
+    //Super::FellOutOfWorld(dmgType);
+    
+    UE_LOG(LogTemp, Warning, TEXT("Fell Down. I'm dead..."))
+    if(GetWorld()) {
+        //Get the current GameMode, casting it to our own GameMode
+        auto CurrentGameMode = Cast<AGameTwoGameMode>(GetWorld()->GetAuthGameMode());
+        
+        //Get the PlayerStart with the wanted tag:
+        AActor *NewPawn = CurrentGameMode->FindPlayerStart(Controller, SpawnPoint);
+        //Set the actors location to this:
+        SetActorLocation(NewPawn->GetActorLocation());
+        //The rotation of the character in this game is controlled by the controller rotation
+        //so we set the controller rotation
+        Controller->ClientSetRotation(NewPawn->GetActorRotation());
+        
+        
+        //Failed attempts:
+        
+        //Not needed, because we did not do anything with the player
+        //It is still alive
+        //CurrentGameMode->RestartPlayer(Controller);
+        //Did not work the expected way...
+        //TempGameMode->RespawnPlayer(Controller);
+    }
+}
+
 void AGameTwoCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
     // Set up gameplay key bindings
@@ -52,7 +105,7 @@ void AGameTwoCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
     PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
     
     PlayerInputComponent->BindAxis("MoveForward", this, &AGameTwoCharacter::MoveForward);
-    PlayerInputComponent->BindAxis("Turn", this, &AGameTwoCharacter::MoveRight);
+    PlayerInputComponent->BindAxis("Turn", this, &AGameTwoCharacter::Turn);
 }
 
 void AGameTwoCharacter::MoveForward(float Value)
@@ -72,7 +125,7 @@ void AGameTwoCharacter::MoveForward(float Value)
     }
 }
 
-void AGameTwoCharacter::MoveRight(float Value)
+void AGameTwoCharacter::Turn(float Value)
 {
     RotateValue = Value;
 }

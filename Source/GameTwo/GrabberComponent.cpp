@@ -117,7 +117,6 @@ void UGrabberComponent::GrabPressed()
     }
 }
 
-
 void UGrabberComponent::GrabReleased()
 {
     PhysicsHandle->ReleaseComponent();

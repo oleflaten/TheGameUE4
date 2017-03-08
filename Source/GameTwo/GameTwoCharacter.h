@@ -27,18 +27,21 @@ public:
 	float BaseLookUpRate;
     
     // Called when the game starts or when spawned
-    //virtual void BeginPlay() override;
+    virtual void BeginPlay() override;
     
     // Called every frame
     virtual void Tick(float DeltaSeconds) override;
 
+    virtual void FellOutOfWorld(const class UDamageType & dmgType) override;
+
+    
 protected:
 
 	/** Called for forwards/backward input */
 	void MoveForward(float Value);
 
 	/** Called for side to side input */
-	void MoveRight(float Value);
+	void Turn(float Value);
     
 protected:
 	// APawn interface
@@ -52,12 +55,17 @@ private:
     UPROPERTY(EditAnywhere, Category = "Movement")
     float BackingFactor = 2.f;
     
+    UPROPERTY(EditAnywhere, Category = "Spawning")
+    FString SpawnPoint = "Second";
+
+    
     /** Holds the Value when rotate is triggered */
     float RotateValue = 0.f;
+    
 
 public:
 	/** Returns CameraBoom subobject **/
-//	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 //	/** Returns FollowCamera subobject **/
 //	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
