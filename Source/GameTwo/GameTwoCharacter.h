@@ -62,6 +62,13 @@ private:
     /** Holds the Value when rotate is triggered */
     float RotateValue = 0.f;
     
+    int Ammo{0};
+    
+    void Interact();
+    
+    void SaveGame();
+    void LoadGame();
+    
 
 public:
 	/** Returns CameraBoom subobject **/

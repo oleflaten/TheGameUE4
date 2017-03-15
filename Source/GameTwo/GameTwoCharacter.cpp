@@ -4,6 +4,7 @@
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "Runtime/Engine/Classes/GameFramework/DamageType.h"
 #include "GameTwoGameMode.h"
+#include "MySaveGame.h"
 #include "GameTwoCharacter.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -56,6 +57,7 @@ void AGameTwoCharacter::BeginPlay()
             Controller->ClientSetRotation(NewPawn->GetActorRotation());
         }
     }
+    LoadGame();
 }
 
 void AGameTwoCharacter::Tick(float DeltaTime)
@@ -103,6 +105,8 @@ void AGameTwoCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
     check(PlayerInputComponent);
     PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
     PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+    PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AGameTwoCharacter::Interact);
+    
     
     PlayerInputComponent->BindAxis("MoveForward", this, &AGameTwoCharacter::MoveForward);
     PlayerInputComponent->BindAxis("Turn", this, &AGameTwoCharacter::Turn);
@@ -128,4 +132,42 @@ void AGameTwoCharacter::MoveForward(float Value)
 void AGameTwoCharacter::Turn(float Value)
 {
     RotateValue = Value;
+}
+
+void AGameTwoCharacter::Interact()
+{
+    Ammo += 10;
+    SaveGame();
+    
+}
+
+void AGameTwoCharacter::SaveGame()
+{
+    UMySaveGame* SavedGame = Cast<UMySaveGame>(UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass()));
+    
+    SavedGame->Ammo = this->Ammo;
+    
+    UGameplayStatics::SaveGameToSlot(SavedGame, TEXT("LevelChange"), 0);
+    
+    UE_LOG(LogTemp, Warning, TEXT("Saved Ammo: %d"), Ammo)
+}
+
+void AGameTwoCharacter::LoadGame()
+{
+    
+    UMySaveGame* SavedGame = Cast<UMySaveGame>(UGameplayStatics::CreateSaveGameObject(UMySaveGame::StaticClass()));
+    
+    SavedGame = Cast<UMySaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("LevelChange"), 0));
+    
+    if (SavedGame)
+    {
+        this->Ammo = SavedGame->Ammo;
+        UE_LOG(LogTemp, Warning, TEXT("Loaded Ammo: %d"), Ammo)
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Loading failed"))
+    }
+    
+    
 }
