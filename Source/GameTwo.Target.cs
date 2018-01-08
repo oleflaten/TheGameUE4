@@ -5,21 +5,9 @@ using System.Collections.Generic;
 
 public class GameTwoTarget : TargetRules
 {
-	public GameTwoTarget(TargetInfo Target)
+	public GameTwoTarget(TargetInfo Target) :base (Target)
 	{
 		Type = TargetType.Game;
-	}
-
-	//
-	// TargetRules interface.
-	//
-
-	public override void SetupBinaries(
-		TargetInfo Target,
-		ref List<UEBuildBinaryConfiguration> OutBuildBinaryConfigurations,
-		ref List<string> OutExtraModuleNames
-		)
-	{
-		OutExtraModuleNames.Add("GameTwo");
+		ExtraModuleNames.Add("GameTwo");
 	}
 }

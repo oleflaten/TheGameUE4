@@ -62,3 +62,4 @@ Intermediate/*
 DerivedDataCache/*
 
 *.xcworkspace
+.DS_Store

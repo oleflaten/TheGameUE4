@@ -4,7 +4,7 @@ using UnrealBuildTool;
 
 public class GameTwo : ModuleRules
 {
-	public GameTwo(TargetInfo Target)
+	public GameTwo(ReadOnlyTargetRules Target) : base (Target)
 	{
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay" });
 	}
